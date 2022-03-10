@@ -8,10 +8,11 @@
                     [generator :as gen]
                     [db :as db]
                     [util :as util]]
+            [slingshot.slingshot :refer [try+ throw+]]
             [jepsen.control.util :as cu]))
 
-(def starrocs-home "/root/starrocks")
-(def fe-start-bin  (str starrocs-home "/fe/start_fe.sh"))
+(def starrocs-home "/root")
+(def fe-start-bin  (str starrocs-home "/fe/bin/start_fe.sh"))
 (def fe-http-port 8030)
 (def fe-query-port 9030)
 (def fe-std-logfile (str starrocs-home "/fe/log/fe.out"))
@@ -26,6 +27,7 @@
   was available."
   [url]
   (try+
+   (info "try to call url" url)
    (c/exec :curl :--fail url)
    (catch [:type :jepsen.control/nonzero-exit] _ false)))
 
@@ -42,21 +44,16 @@
         (recur ready)))))
 
 (defn db
+  []
   (reify db/DB
     (setup! [_ test node]
       (c/su
        (info node "starting starrocks")
-       (cu/start-daemon!
-        {:logfile fe-std-logfile
-         :pidfile fe-pidfile
-         :chdir starrocs-home
-          }
-        fe-start-bin)
+       (c/exec fe-start-bin :--daemon)
 
        (wait-to-ready (http-url node fe-http-port "/api/health"))))
 
     (teardown! [_ test node]
       (c/su
         (info node "stopping starrocks")
-        (cu/stop-daemon! fe-start-bin fe-pidfile)
-        (cu/grepkill! fe-start-bin)))))
+        (cu/grepkill! :java)))))
