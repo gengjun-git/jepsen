@@ -6,6 +6,7 @@
             [clojure.tools.logging :refer [info warn]]
             [slingshot.slingshot :refer [try+ throw+]]))
 
+(def query-port      9030)
 (def txn-timeout     5000)
 (def connect-timeout 10000)
 (def socket-timeout  10000)
@@ -18,7 +19,7 @@
   [node]
   {:classname       "org.mariadb.jdbc.Driver"
    :subprotocol     "mariadb"
-   :subname         (str "//" (name node) ":9030")
+   :subname         (str "//" (name node) ":" query-port)
    :user            "root"
    :password        ""
    :connectTimeout  connect-timeout
@@ -42,32 +43,33 @@
   ([node test]
    (open node test open-timeout))
   ([node test open-timeout]
-   (timeout open-timeout
-            (throw+ {:type :connect-timed-out
-                     :node node})
-            (util/retry 1
-                        (try
-                          (let [spec (assoc (conn-spec node)
-                                            ::node node
-                                            ; jdbc is gonna convert everything
-                                            ; in the spec to a string at some
-                                            ; point, so we scrupulously do NOT
-                                            ; want to pass it the full test, or
-                                            ; it'll blow out RAM.
-                                            ::test (select-keys
-                                                     test
-                                                     [:auto-retry
-                                                      :auto-retry-limit]))
-                                conn   (j/get-connection spec)
-                                spec'  (j/add-connection spec conn)]
-                            (assert spec')
-                            (init-conn! spec'))
-                          (catch java.sql.SQLNonTransientConnectionException e
-                            ; Conn refused
-                            (throw e))
-                          (catch Throwable t
-                            (info t "Unexpected connection error, retrying")
-                            (throw t)))))))
+    (info (str "try to connect to " node ":" query-port))
+    (timeout open-timeout
+             (throw+ {:type :connect-timed-out
+                      :node node})
+             (util/retry 1
+               (try
+                 (let [spec (assoc (conn-spec node)
+                                   ::node node
+                                   ; jdbc is gonna convert everything
+                                   ; in the spec to a string at some
+                                   ; point, so we scrupulously do NOT
+                                   ; want to pass it the full test, or
+                                   ; it'll blow out RAM.
+                                   ::test (select-keys
+                                            test
+                                            [:auto-retry
+                                             :auto-retry-limit]))
+                       conn   (j/get-connection spec)
+                       spec'  (j/add-connection spec conn)]
+                   (assert spec')
+                   (init-conn! spec'))
+                 (catch java.sql.SQLNonTransientConnectionException e
+                   ; Conn refused
+                   (throw e))
+                 (catch Throwable t
+                   (info t "Unexpected connection error, retrying")
+                   (throw t)))))))
 
 (defn close!
   "Given a JDBC connection, closes it and returns the underlying spec."
