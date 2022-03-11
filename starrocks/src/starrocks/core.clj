@@ -11,7 +11,8 @@
                     [util :as util]]
             [jepsen.control.util :as cu]
             [jepsen.os.debian :as debian]
-            [starrocks [db :as db]]))
+            [starrocks [db :as db]
+                       [tables :as tables]]))
 
 (defn starrocks-test
   [opts]
@@ -19,10 +20,10 @@
          opts
          {:name "starrocks"
           :os   debian/os
-          :db   (db/db)}))
+          :db   (db/db)}
+         (tables/workload opts)))
 
 (defn -main
   [& args]
-  (cli/run! (merge (cli/single-test-cmd {:test-fn starrocks-test})
-                   (cli/serve-cmd))
+  (cli/run! (merge (cli/single-test-cmd {:test-fn starrocks-test}))
             args))
