@@ -1,0 +1,1 @@
+lein run test  --time-limit 120 --concurrency 2n  --username root --ssh-private-key ~/.ssh/id_rsa --node 172.26.195.35  --node 172.26.195.33 --node 172.26.195.34 --node 172.26.195.36 --node 172.26.195.37
