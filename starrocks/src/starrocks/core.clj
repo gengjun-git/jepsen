@@ -12,15 +12,17 @@
             [jepsen.control.util :as cu]
             [jepsen.os.debian :as debian]
             [starrocks [db :as db]
-                       [tables :as tables]]))
+                       [tables :as tables]
+                       [nemesis :as nemesis]]))
 
 (defn starrocks-test
   [opts]
   (merge tests/noop-test
          opts
-         {:name "starrocks"
-          :os   debian/os
-          :db   (db/db)}
+         {:name       "starrocks"
+          :os         debian/os
+          :db         (db/db)
+          :nemeses    (nemesis/process-nemesis)}
          (tables/workload opts)))
 
 (defn -main

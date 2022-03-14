@@ -43,6 +43,16 @@
         ; still starting
         (recur ready)))))
 
+(defn stop-fe!
+  []
+  (c/su
+    (cu/grepkill! :java)))
+
+(defn start-fe!
+  []
+  (c/su
+    (c/exec fe-start-bin :--daemon)))
+
 (defn db
   []
   (reify db/DB

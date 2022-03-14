@@ -46,6 +46,9 @@
   (let [c (:concurrency opts)]
     {:client (SetClient. nil)
      :generator (->> (gen/reserve (- c 1) (creates) (shows))
-                     (gen/nemesis nil)
+                     (gen/nemesis (cycle [(gen/sleep 5)
+                                          {:type :info, :f :stop-fe}
+                                          (gen/sleep 5)
+                                          {:type :info, :f :start-fe}]))
                      (gen/stagger 1/10))
      :checker (checker/set-full)}))
