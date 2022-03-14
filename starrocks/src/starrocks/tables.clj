@@ -41,14 +41,20 @@
   []
   {:type :invoke, :f :show, :value nil})
 
+(defn kill-gen
+  []
+  (->> (cycle [(gen/sleep 5)
+               {:type :info, :f :start-fe}
+               (gen/sleep 5)
+               {:type :info, :f :stop-fe}])
+       (gen/seq)))
+
 (defn workload
   [opts]
+  (info "workload called")
   (let [c (:concurrency opts)]
-    {:client (SetClient. nil)
+    {:client    (SetClient. nil)
      :generator (->> (gen/reserve (- c 1) (creates) (shows))
-                     (gen/nemesis (cycle [(gen/sleep 5)
-                                          {:type :info, :f :stop-fe}
-                                          (gen/sleep 5)
-                                          {:type :info, :f :start-fe}]))
-                     (gen/stagger 1/10))
-     :checker (checker/set-full)}))
+                     (gen/stagger 1/10)
+                     (gen/nemesis (kill-gen)))
+     :checker   (checker/set-full)}))

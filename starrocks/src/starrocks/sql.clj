@@ -32,6 +32,8 @@
 
   Returns conn."
   [conn]
+  (j/execute! conn ["drop database if exists test force"])
+
   (j/execute! conn ["create database if not exists test"])
 
   (j/execute! conn ["use test"])
