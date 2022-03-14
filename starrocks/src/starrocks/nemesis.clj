@@ -33,7 +33,7 @@
                   (c/on-nodes test nodes
                               (fn [test node]
                                 (case (:f op)
-                                  :start-fe  (db/start-fe!)
-                                  :stop-fe   (db/stop-fe!)))))))
+                                  :start-fe  (db/start-fe! test node)
+                                  :stop-fe   (db/stop-fe! test node)))))))
 
     (teardown! [this test])))

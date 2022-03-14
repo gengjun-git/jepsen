@@ -26,7 +26,7 @@
                  (assoc op :type :ok, :value))))
 
   (teardown! [_ test]
-    (c/execute! conn ["drop database test force"]))
+    (c/execute! conn ["drop database if not exists test"]))
 
   (close! [_ test]
     (c/close! conn)))

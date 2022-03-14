@@ -44,12 +44,14 @@
         (recur ready)))))
 
 (defn stop-fe!
-  []
+  [test node]
+  (info "stop-fe! called" node)
   (c/su
     (cu/grepkill! :java)))
 
 (defn start-fe!
-  []
+  [test node]
+  (info "start-fe! called" node)
   (c/su
     (c/exec fe-start-bin :--daemon)))
 
