@@ -18,14 +18,15 @@
 
   (invoke! [this test op]
     (case (:f op)
-      :create  (do (c/execute! conn [(str "create table t" (:value op))])
+      :create  (do (c/execute! conn [(str "create table t" (:value op) " (a int) distributed by hash(a) properties(\"replication_num\" = \"1\")")])
                    (assoc op :type :ok))
 
       :show (->> (c/query conn ["show tables"])
-                 (mapv :Tables_in_test)
+                 (mapv :tables_in_test)
                  (assoc op :type :ok, :value))))
 
-  (teardown! [_ test])
+  (teardown! [_ test]
+    (c/execute! conn ["drop database test force"]))
 
   (close! [_ test]
     (c/close! conn)))
@@ -43,8 +44,8 @@
 (defn workload
   [opts]
   (let [c (:concurrency opts)]
-    (info "concurrency is " c)
     {:client (SetClient. nil)
-     :generator (->> (gen/reserve (/ c 2) (creates) (shows))
+     :generator (->> (gen/reserve (- c 1) (creates) (shows))
+                     (gen/nemesis nil)
                      (gen/stagger 1/10))
      :checker (checker/set-full)}))
