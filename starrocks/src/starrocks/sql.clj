@@ -12,7 +12,7 @@
 (def socket-timeout  10000)
 (def open-timeout
   "How long will we wait for an open call by default"
-  5000)
+  50000)
 
 (defn conn-spec
   "jdbc connection spec for a node."

@@ -15,6 +15,18 @@
     [clojure.tools.logging :refer :all]
     [slingshot.slingshot :refer [try+ throw+]]))
 
+(defn kill-gen
+  []
+  (->> (cycle [(gen/sleep 5)
+               {:type :info, :f :start-fe}
+               (gen/sleep 5)
+               {:type :info, :f :stop-fe}])
+       (gen/seq)))
+
+(defn kill-gen2
+  []
+  {:type :info, :f :stop-fe})
+
 (defn process-nemesis
   []
   (reify nemesis/Nemesis
@@ -29,6 +41,7 @@
                     (util/random-nonempty-subset nodes))
             ; If the op wants to give us nodes, that's great
             nodes (or (:value op) nodes)]
+        (info "nodes to nemesis" nodes)
         (assoc op :value
                   (c/on-nodes test nodes
                               (fn [test node]

@@ -6,7 +6,8 @@
              [generator :as gen]]
             [knossos.op :as op]
             [clojure.tools.logging :refer [info warn]]
-            [starrocks.sql :as c :refer :all]))
+            [starrocks.sql :as c :refer :all]
+            [starrocks.nemesis :as nemesis]))
 
 (defrecord SetClient [conn]
   client/Client
@@ -41,20 +42,13 @@
   []
   {:type :invoke, :f :show, :value nil})
 
-(defn kill-gen
-  []
-  (->> (cycle [(gen/sleep 5)
-               {:type :info, :f :start-fe}
-               (gen/sleep 5)
-               {:type :info, :f :stop-fe}])
-       (gen/seq)))
-
 (defn workload
   [opts]
   (info "workload called")
   (let [c (:concurrency opts)]
     {:client    (SetClient. nil)
+     :nemeses   (nemesis/process-nemesis)
      :generator (->> (gen/reserve (- c 1) (creates) (shows))
                      (gen/stagger 1/10)
-                     (gen/nemesis (kill-gen)))
+                     (gen/nemesis (nemesis/kill-gen2)))
      :checker   (checker/set-full)}))

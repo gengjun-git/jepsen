@@ -21,8 +21,7 @@
          opts
          {:name       "starrocks"
           :os         debian/os
-          :db         (db/db)
-          :nemeses    (nemesis/process-nemesis)}
+          :db         (db/db)}
          (tables/workload opts)))
 
 (defn -main
