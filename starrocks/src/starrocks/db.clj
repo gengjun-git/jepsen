@@ -9,14 +9,12 @@
                     [db :as db]
                     [util :as util]]
             [slingshot.slingshot :refer [try+ throw+]]
-            [jepsen.control.util :as cu]))
+            [jepsen.control.util :as cu]
+            [starrocks.sql :as sql]))
 
 (def starrocs-home "/root")
 (def fe-start-bin  (str starrocs-home "/fe/bin/start_fe.sh"))
 (def fe-http-port 8030)
-(def fe-query-port 9030)
-(def fe-std-logfile (str starrocs-home "/fe/log/fe.out"))
-(def fe-pidfile (str starrocs-home "/fe/bin/fe.pid"))
 
 (defn http-url
   [node port url]
@@ -60,12 +58,19 @@
   (reify db/DB
     (setup! [_ test node]
       (c/su
-       (info node "starting starrocks")
+       (info node "setup starrocks")
+
        (c/exec fe-start-bin :--daemon)
 
-       (wait-to-ready (http-url node fe-http-port "/api/health"))))
+       (wait-to-ready (http-url node fe-http-port "/api/health"))
+
+       ; sleep 10s to wait for the new master log
+       (util/sleep 10000)
+
+       (let [conn (sql/open node {})]
+         (sql/execute! conn ["drop database if exists test"]))))
 
     (teardown! [_ test node]
       (c/su
-        (info node "stopping starrocks")
+        (info node "teardown starrocks")
         (cu/grepkill! :java)))))

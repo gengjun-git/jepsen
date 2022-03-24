@@ -15,19 +15,19 @@
     (assoc this :conn (c/open node test)))
 
   (setup! [this test]
-    (info "do nothing in setup!"))
+    (c/execute! conn ["create database if not exists test"])
+
+    (c/execute! conn ["use test"]))
 
   (invoke! [this test op]
     (case (:f op)
-      :create  (do (c/execute! conn [(str "create table t" (:value op) " (a int) distributed by hash(a) properties(\"replication_num\" = \"1\")")])
+      :create  (do (c/execute! conn [(str "create table test.t" (:value op) " (a int) distributed by hash(a) properties(\"replication_num\" = \"1\")")])
                    (assoc op :type :ok))
 
-      :show (->> (c/query conn ["show tables"])
-                 (mapv :tables_in_test)
-                 (assoc op :type :ok, :value))))
+      :show    (do (c/query conn ["show tables from test"])
+                   (assoc op :type :ok, :value []))))
 
-  (teardown! [_ test]
-    (c/execute! conn ["drop database if not exists test"]))
+  (teardown! [_ test])
 
   (close! [_ test]
     (c/close! conn)))
@@ -47,8 +47,9 @@
   (info "workload called")
   (let [c (:concurrency opts)]
     {:client    (SetClient. nil)
-     :nemeses   (nemesis/process-nemesis)
+     :nemesis   (nemesis/process-nemesis)
      :generator (->> (gen/reserve (- c 1) (creates) (shows))
                      (gen/stagger 1/10)
-                     (gen/nemesis (nemesis/kill-gen2)))
+                     (gen/nemesis (nemesis/kill-gen))
+                     (gen/time-limit 600))
      :checker   (checker/set-full)}))

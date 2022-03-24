@@ -19,13 +19,14 @@
   []
   (->> (cycle [(gen/sleep 5)
                {:type :info, :f :start-fe}
-               (gen/sleep 5)
+               (gen/sleep 60)
                {:type :info, :f :stop-fe}])
        (gen/seq)))
 
-(defn kill-gen2
-  []
-  {:type :info, :f :stop-fe})
+(defn rand-get-one
+  [nodes]
+  (let [index (rand-int 5)]
+       [(get nodes index)]))
 
 (defn process-nemesis
   []
@@ -33,15 +34,8 @@
     (setup! [this test] this)
 
     (invoke! [this test op]
-      (let [nodes (:nodes test)
-            nodes (case (:f op)
-                    ; When resuming, resume all nodes
-                    (:start-fe) nodes
-
-                    (util/random-nonempty-subset nodes))
-            ; If the op wants to give us nodes, that's great
-            nodes (or (:value op) nodes)]
-        (info "nodes to nemesis" nodes)
+      (let [nodes (:nodes test)]
+        (info "nodes to nemesis" nodes "f is" (:f op))
         (assoc op :value
                   (c/on-nodes test nodes
                               (fn [test node]

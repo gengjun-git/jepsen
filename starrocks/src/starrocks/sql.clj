@@ -25,21 +25,6 @@
    :connectTimeout  connect-timeout
    :socketTimeout   socket-timeout})
 
-(defn init-conn!
-  "Create database test.
-
-  Use database test.
-
-  Returns conn."
-  [conn]
-  (j/execute! conn ["drop database if exists test"])
-
-  (j/execute! conn ["create database if not exists test"])
-
-  (j/execute! conn ["use test"])
-
-  conn)
-
 (defn open
   "Opens a connection to the given node."
   ([node test]
@@ -65,7 +50,7 @@
                        conn   (j/get-connection spec)
                        spec'  (j/add-connection spec conn)]
                    (assert spec')
-                   (init-conn! spec'))
+                   spec')
                  (catch java.sql.SQLNonTransientConnectionException e
                    ; Conn refused
                    (throw e))
